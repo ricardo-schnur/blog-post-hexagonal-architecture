@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":rebaseStalePrs",
+    "group:all"
+  ],
+  "reviewers": [
+    "rschnur-colenet"
+  ],
+  "timezone": "Europe/Berlin",
+  "schedule": [
+    "before 4am on the first day of the month"
+  ]
+}
