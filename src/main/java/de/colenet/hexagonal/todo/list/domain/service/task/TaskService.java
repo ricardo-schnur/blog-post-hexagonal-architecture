@@ -40,4 +40,8 @@ public class TaskService {
             case CompletedTask t -> new OpenTask(t.id(), t.description(), t.dueDate());
         };
     }
+
+    public List<OpenTask> getAllOpenTasksWithDueDateBeforeOrEqual(LocalDate date) {
+        return taskRepository.getAllOpenTasksWithDueDateBeforeOrEqual(date);
+    }
 }
