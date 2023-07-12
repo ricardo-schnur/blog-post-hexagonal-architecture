@@ -1,0 +1,10 @@
+# See https://hub.docker.com/_/mongo
+services:
+  mongo:
+    image: "mongo:6.0.8"
+    restart: "unless-stopped"
+    ports:
+      - "27017:27017" # Map the port to make it accessible outside the container
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "root"
+      MONGO_INITDB_ROOT_PASSWORD: "example" # Use secrets in a production application instead of plaintext passwords!
