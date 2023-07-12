@@ -4,10 +4,12 @@ import de.colenet.hexagonal.todo.list.adapter.rest.mapper.RestApiMapper;
 import de.colenet.hexagonal.todo.list.adapter.rest.model.TaskDto;
 import de.colenet.hexagonal.todo.list.adapter.rest.validator.RestApiValidator;
 import de.colenet.hexagonal.todo.list.domain.service.task.TaskService;
+import io.vavr.Function2;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,11 +31,12 @@ class RestApiController {
     }
 
     @PostMapping(value = "/tasks", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<?> createTask(@RequestParam String description) {
+    ResponseEntity<?> createTask(@RequestParam String description, @RequestParam @Nullable String dueDate) {
         return restApiValidator
-            .validateDescription(description)
-            .map(taskService::createTask)
+            .validateCreateTaskParameters(description, dueDate)
+            .map(Function2.of(taskService::createTask).tupled())
             .map(restApiMapper::toDto)
+            .mapError(messages -> String.join("; ", messages))
             .fold(RestApiController::createBadRequestResponse, RestApiController::createOkResponse);
     }
 

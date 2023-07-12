@@ -21,7 +21,8 @@ The application offers an API that exposes an endpoint for each of the aforement
 - `GET http://localhost:8080/tasks` returns all existing tasks
 - `POST http://localhost:8080/tasks` creates a new task, expects the following parameters:
     - `description` (mandatory): The display name of the task
-    - Example: `POST http://localhost:8080/tasks?description=Some%20Task`
+    - `dueDate` (optional): Should be in the format `yyyy-MM-dd`
+    - Example: `POST http://localhost:8080/tasks?description=Some%20Task&dueDate=2023-07-01`
 - `POST http://localhost:8080/tasks/toggle-completion/{id}` toggles the completion state of the task with the specified
   id
 

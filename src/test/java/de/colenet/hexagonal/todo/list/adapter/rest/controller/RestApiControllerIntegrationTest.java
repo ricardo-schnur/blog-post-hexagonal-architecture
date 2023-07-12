@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import de.colenet.hexagonal.todo.list.adapter.rest.model.TaskDto;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task;
 import de.colenet.hexagonal.todo.list.domain.service.task.TaskService;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +40,10 @@ class RestApiControllerIntegrationTest {
             new CompletedTask(
                 UUID.fromString("2694d026-dab7-1b4e-5fdb-1ba906d43565"),
                 "This task is completed",
+                Optional.of(LocalDate.of(2023, 7, 11)),
                 LocalDateTime.of(2023, 7, 11, 9, 30)
             ),
-            new OpenTask(UUID.fromString("71195625-2414-ad41-4dce-a9dfc6cf4c38"), "This task is open")
+            new OpenTask(UUID.fromString("71195625-2414-ad41-4dce-a9dfc6cf4c38"), "This task is open", Optional.empty())
         );
 
         when(taskService.getAllTasks()).thenReturn(tasks);
@@ -59,10 +61,11 @@ class RestApiControllerIntegrationTest {
                 new TaskDto(
                     "2694d026-dab7-1b4e-5fdb-1ba906d43565",
                     "This task is completed",
+                    "2023-07-11",
                     "completed",
                     "2023-07-11T09:30"
                 ),
-                new TaskDto("71195625-2414-ad41-4dce-a9dfc6cf4c38", "This task is open", "open", null)
+                new TaskDto("71195625-2414-ad41-4dce-a9dfc6cf4c38", "This task is open", null, "open", null)
             );
     }
 
@@ -83,24 +86,34 @@ class RestApiControllerIntegrationTest {
         );
 
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(result.getBody()).isEqualTo("Description is mandatory");
+        assertThat(result.getBody())
+            .isEqualTo("Description is mandatory; Due date has to be in format yyyy-MM-dd: 2023-07-111");
     }
 
     @Test
     void createTask_CreatesTaskViaService_ReturnsCreatedTasks() {
         String description = "Some description";
-        OpenTask createdTask = createOpenTaskBuilder().withDescription(description);
+        String dueDateString = "2023-07-11";
+        LocalDate dueDate = LocalDate.of(2023, 7, 11);
+        OpenTask createdTask = createOpenTaskBuilder()
+            .with(t -> t.description(description).dueDate(Optional.of(dueDate)));
 
-        when(taskService.createTask(description)).thenReturn(createdTask);
+        when(taskService.createTask(description, Optional.of(dueDate))).thenReturn(createdTask);
 
         var result = restTemplate.postForEntity(
-            UriComponentsBuilder.fromPath("/tasks").queryParam("description", description).build().toUri(),
+            UriComponentsBuilder
+                .fromPath("/tasks")
+                .queryParam("description", description)
+                .queryParam("dueDate", dueDateString)
+                .build()
+                .toUri(),
             null,
             TaskDto.class
         );
 
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(result.getBody()).isEqualTo(new TaskDto(createdTask.id().toString(), description, "open", null));
+        assertThat(result.getBody())
+            .isEqualTo(new TaskDto(createdTask.id().toString(), description, dueDateString, "open", null));
     }
 
     @Test
@@ -129,13 +142,18 @@ class RestApiControllerIntegrationTest {
     void toggleCompletionState_UpdatesTaskViaService_ReturnsUpdatesTasks() {
         String id = "71195625-2414-ad41-4dce-a9dfc6cf4c38";
         String description = "Some description";
-        Task updatedTask = createOpenTaskBuilder().with(t -> t.id(UUID.fromString(id)).description(description));
+        String dueDateString = "2023-07-11";
+        Task updatedTask = createOpenTaskBuilder()
+            .with(t ->
+                t.id(UUID.fromString(id)).description(description).dueDate(Optional.of(LocalDate.parse(dueDateString)))
+            );
 
         when(taskService.toggleCompletionState(UUID.fromString(id))).thenReturn(Optional.of(updatedTask));
 
         var result = restTemplate.postForEntity("/tasks/toggle-completion/{id}", null, TaskDto.class, Map.of("id", id));
 
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(result.getBody()).isEqualTo(new TaskDto(updatedTask.id().toString(), description, "open", null));
+        assertThat(result.getBody())
+            .isEqualTo(new TaskDto(updatedTask.id().toString(), description, dueDateString, "open", null));
     }
 }
