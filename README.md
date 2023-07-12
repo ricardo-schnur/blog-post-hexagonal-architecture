@@ -34,6 +34,9 @@ via [environment variables][Env]) to adjust the behaviour of the application:
 - `notification.interval`: The interval (in seconds), in which due notifications are sent
 - `startup.exampletasks.create`: Set to `true` or `false` - controls, whether example tasks are created on application
   start
+- `storage.type`: Either `cache` or `database`
+    - In `cache` mode, the data is stored in-memory and lost on application shutdown
+    - In `database` mode, the data is persisted to a MongoDB database
 
 ## Build and ruin
 
