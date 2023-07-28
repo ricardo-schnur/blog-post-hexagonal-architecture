@@ -6,6 +6,7 @@ import com.tngtech.valueprovider.ValueProvider;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task.CompletedTask;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task.OpenTask;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public final class TaskTestdataFactory {
 
@@ -32,6 +33,7 @@ public final class TaskTestdataFactory {
             .builder()
             .id(values.uuid())
             .description(values.fixedDecoratedString("Description-"))
+            .dueDate(values.booleanValue() ? Optional.of(values.localDateBetweenYears(2000, 2100)) : Optional.empty())
             .build();
     }
 
@@ -48,6 +50,7 @@ public final class TaskTestdataFactory {
             .builder()
             .id(values.uuid())
             .description(values.fixedDecoratedString("Description-"))
+            .dueDate(values.booleanValue() ? Optional.of(values.localDateBetweenYears(2000, 2100)) : Optional.empty())
             .completionTime(LocalDateTime.of(values.localDateBetweenYears(2000, 2100), values.localTime()))
             .build();
     }

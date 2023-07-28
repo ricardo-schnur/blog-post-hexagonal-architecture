@@ -4,6 +4,7 @@ import de.colenet.hexagonal.todo.list.domain.model.task.Task;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task.CompletedTask;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task.OpenTask;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,8 +22,8 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    public Task createTask(String description) {
-        return taskRepository.save(new OpenTask(UUID.randomUUID(), description));
+    public Task createTask(String description, Optional<LocalDate> dueDate) {
+        return taskRepository.save(new OpenTask(UUID.randomUUID(), description, dueDate));
     }
 
     public List<Task> getAllTasks() {
@@ -35,8 +36,12 @@ public class TaskService {
 
     private Task withToggledCompletionState(Task task) {
         return switch (task) {
-            case OpenTask t -> new CompletedTask(t.id(), t.description(), LocalDateTime.now(clock));
-            case CompletedTask t -> new OpenTask(t.id(), t.description());
+            case OpenTask t -> new CompletedTask(t.id(), t.description(), t.dueDate(), LocalDateTime.now(clock));
+            case CompletedTask t -> new OpenTask(t.id(), t.description(), t.dueDate());
         };
+    }
+
+    public List<OpenTask> getAllOpenTasksWithDueDateBeforeOrEqual(LocalDate date) {
+        return taskRepository.getAllOpenTasksWithDueDateBeforeOrEqual(date);
     }
 }

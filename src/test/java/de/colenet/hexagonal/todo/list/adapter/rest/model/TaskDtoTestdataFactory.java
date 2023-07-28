@@ -23,6 +23,7 @@ public final class TaskDtoTestdataFactory {
             .builder()
             .id(values.uuid().toString())
             .description(values.fixedDecoratedString("Description-"))
+            .dueDate(values.booleanValue() ? values.localDateBetweenYears(2000, 2100).toString() : null)
             .state(completed ? "completed" : "open")
             .completionTime(
                 completed
