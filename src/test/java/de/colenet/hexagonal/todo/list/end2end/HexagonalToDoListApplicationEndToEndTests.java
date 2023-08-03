@@ -3,14 +3,23 @@ package de.colenet.hexagonal.todo.list.end2end;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.colenet.hexagonal.todo.list.adapter.rest.model.TaskDto;
-import io.vavr.Function2;
+import de.colenet.hexagonal.todo.list.util.mongo.MongoExtension;
+import io.vavr.Function3;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.Test;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -20,89 +29,143 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class HexagonalToDoListApplicationEndToEndTests {
 
-    @Autowired
-    private TestRestTemplate restTemplate;
+    @Nested
+    @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "storage.type=cache")
+    class CacheMode {
 
-    @Test
-    void returnsEmptyListIfNoTasksHaveBeenCreated() {
-        var result = getAllTasks();
+        @Autowired
+        private TestRestTemplate restTemplate;
 
-        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(result.getBody()).isEmpty();
+        @ParameterizedTest(name = "{1}")
+        @ArgumentsSource(TestCases.class)
+        void runAllTests(Consumer<TestRestTemplate> test, String description) {
+            test.accept(restTemplate);
+        }
     }
 
-    @Test
-    void creatingTasksIsPossibleAndCreatedTasksAreReturnedFromGetAll() {
-        List<Tuple2<String, String>> descriptionsAndDueDates = List.of(
-            Tuple.of("Some description", "2023-07-11"),
-            Tuple.of("Some other description", null),
-            Tuple.of("Task", "2023-07-12"),
-            Tuple.of("Task with same due date", "2023-07-12")
-        );
-        descriptionsAndDueDates.forEach(Function2.of(this::createTask).tupled()::apply);
+    @Nested
+    @ExtendWith(MongoExtension.class)
+    @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "storage.type=database")
+    class DatabaseMode {
 
-        var result = getAllTasks();
+        @Autowired
+        private TestRestTemplate restTemplate;
 
-        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(result.getBody())
-            .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
-            .containsExactlyInAnyOrder(
-                new TaskDto(null, "Some description", "2023-07-11", "open", null),
-                new TaskDto(null, "Some other description", null, "open", null),
-                new TaskDto(null, "Task", "2023-07-12", "open", null),
-                new TaskDto(null, "Task with same due date", "2023-07-12", "open", null)
+        @ParameterizedTest(name = "{1}")
+        @ArgumentsSource(TestCases.class)
+        void runAllTests(Consumer<TestRestTemplate> test, String description) {
+            test.accept(restTemplate);
+        }
+    }
+
+    private static class TestCases implements ArgumentsProvider {
+
+        private TestCases() {}
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+            return Stream
+                .<Tuple2<Consumer<TestRestTemplate>, String>>of(
+                    Tuple.of(
+                        TestCases::returnsEmptyListIfNoTasksHaveBeenCreated,
+                        "returnsEmptyListIfNoTasksHaveBeenCreated"
+                    ),
+                    Tuple.of(
+                        TestCases::creatingTasksIsPossibleAndCreatedTasksAreReturnedFromGetAll,
+                        "creatingTasksIsPossibleAndCreatedTasksAreReturnedFromGetAll"
+                    ),
+                    Tuple.of(
+                        TestCases::completionStateOfTasksCanBeToggledAndTogglingOnlyChangesStateAndCompletionTime,
+                        "completionStateOfTasksCanBeToggledAndTogglingOnlyChangesStateAndCompletionTime"
+                    )
+                )
+                .map(tuple -> tuple.apply(Arguments::of));
+        }
+
+        private static void returnsEmptyListIfNoTasksHaveBeenCreated(TestRestTemplate restTemplate) {
+            var result = getAllTasks(restTemplate);
+
+            assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(result.getBody()).isEmpty();
+        }
+
+        private static void creatingTasksIsPossibleAndCreatedTasksAreReturnedFromGetAll(TestRestTemplate restTemplate) {
+            List<Tuple2<String, String>> descriptionsAndDueDates = List.of(
+                Tuple.of("Some description", "2023-07-11"),
+                Tuple.of("Some other description", null),
+                Tuple.of("Task", "2023-07-12"),
+                Tuple.of("Task with same due date", "2023-07-12")
             );
-        assertThat(result.getBody()).extracting(TaskDto::id).extracting(UUID::fromString).doesNotContainNull();
-    }
 
-    @Test
-    void completionStateOfTasksCanBeToggledAndTogglingOnlyChangesStateAndCompletionTime() {
-        var createdTask = createTask("Some description", "2023-07-11").getBody();
-        assertThat(createdTask.state()).isEqualTo("open");
+            descriptionsAndDueDates.forEach(Function3.of(TestCases::createTask).apply(restTemplate).tupled()::apply);
 
-        var id = createdTask.id();
+            var result = getAllTasks(restTemplate);
 
-        var toggledTask = toggleTask(id).getBody();
-        assertThat(toggledTask)
-            .usingRecursiveComparison()
-            .ignoringFields("state", "completionTime")
-            .isEqualTo(createdTask);
-        assertThat(toggledTask.state()).isEqualTo("completed");
-        assertThat(toggledTask.completionTime()).isNotNull();
+            assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(result.getBody())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
+                .containsExactlyInAnyOrder(
+                    new TaskDto(null, "Some description", "2023-07-11", "open", null),
+                    new TaskDto(null, "Some other description", null, "open", null),
+                    new TaskDto(null, "Task", "2023-07-12", "open", null),
+                    new TaskDto(null, "Task with same due date", "2023-07-12", "open", null)
+                );
+            assertThat(result.getBody()).extracting(TaskDto::id).extracting(UUID::fromString).doesNotContainNull();
+        }
 
-        var toggledTwiceTask = toggleTask(id).getBody();
-        assertThat(toggledTwiceTask).isEqualTo(createdTask);
+        private static void completionStateOfTasksCanBeToggledAndTogglingOnlyChangesStateAndCompletionTime(
+            TestRestTemplate restTemplate
+        ) {
+            var createdTask = createTask(restTemplate, "Some description", "2023-07-11").getBody();
+            assertThat(createdTask.state()).isEqualTo("open");
 
-        var toggledThriceTask = toggleTask(id).getBody();
-        assertThat(toggledThriceTask)
-            .usingRecursiveComparison()
-            .ignoringFields("completionTime")
-            .isEqualTo(toggledTask);
-        assertThat(LocalDateTime.parse(toggledThriceTask.completionTime()))
-            .isAfter(LocalDateTime.parse(toggledTask.completionTime()));
-    }
+            var id = createdTask.id();
 
-    private ResponseEntity<List<TaskDto>> getAllTasks() {
-        return restTemplate.exchange("/tasks", HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
-    }
+            var toggledTask = toggleTask(restTemplate, id).getBody();
+            assertThat(toggledTask)
+                .usingRecursiveComparison()
+                .ignoringFields("state", "completionTime")
+                .isEqualTo(createdTask);
+            assertThat(toggledTask.state()).isEqualTo("completed");
+            assertThat(toggledTask.completionTime()).isNotNull();
 
-    private ResponseEntity<TaskDto> createTask(String description, String dueDate) {
-        return restTemplate.postForEntity(
-            UriComponentsBuilder
-                .fromPath("/tasks")
-                .queryParam("description", description)
-                .queryParam("dueDate", dueDate)
-                .build()
-                .toUri(),
-            null,
-            TaskDto.class
-        );
-    }
+            var toggledTwiceTask = toggleTask(restTemplate, id).getBody();
+            assertThat(toggledTwiceTask).isEqualTo(createdTask);
 
-    private ResponseEntity<TaskDto> toggleTask(String id) {
-        return restTemplate.postForEntity("/tasks/toggle-completion/{id}", null, TaskDto.class, Map.of("id", id));
+            var toggledThriceTask = toggleTask(restTemplate, id).getBody();
+            assertThat(toggledThriceTask)
+                .usingRecursiveComparison()
+                .ignoringFields("completionTime")
+                .isEqualTo(toggledTask);
+            assertThat(LocalDateTime.parse(toggledThriceTask.completionTime()))
+                .isAfter(LocalDateTime.parse(toggledTask.completionTime()));
+        }
+
+        private static ResponseEntity<List<TaskDto>> getAllTasks(TestRestTemplate restTemplate) {
+            return restTemplate.exchange("/tasks", HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+        }
+
+        private static ResponseEntity<TaskDto> createTask(
+            TestRestTemplate restTemplate,
+            String description,
+            String dueDate
+        ) {
+            return restTemplate.postForEntity(
+                UriComponentsBuilder
+                    .fromPath("/tasks")
+                    .queryParam("description", description)
+                    .queryParam("dueDate", dueDate)
+                    .build()
+                    .toUri(),
+                null,
+                TaskDto.class
+            );
+        }
+
+        private static ResponseEntity<TaskDto> toggleTask(TestRestTemplate restTemplate, String id) {
+            return restTemplate.postForEntity("/tasks/toggle-completion/{id}", null, TaskDto.class, Map.of("id", id));
+        }
     }
 }
