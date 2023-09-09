@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.1</version>
+        <version>3.1.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>de.colenet</groupId>
@@ -22,13 +22,13 @@
         <plugin.setting.prettier.goal>check</plugin.setting.prettier.goal>
 
         <!-- Plugin versions -->
-        <plugin.prettier>0.20</plugin.prettier>
+        <plugin.prettier>0.21</plugin.prettier>
         <plugin.prettier.java>2.1.0</plugin.prettier.java>
 
         <!-- Dependency versions -->
-        <dependency.archunit>1.0.1</dependency.archunit>
+        <dependency.archunit>1.1.0</dependency.archunit>
         <dependency.record-builder>37</dependency.record-builder>
-        <dependency.testcontainers>1.18.3</dependency.testcontainers>
+        <dependency.testcontainers>1.19.0</dependency.testcontainers>
         <dependency.valueprovider>1.2.1</dependency.valueprovider>
         <dependency.vavr>0.10.4</dependency.vavr>
     </properties>
