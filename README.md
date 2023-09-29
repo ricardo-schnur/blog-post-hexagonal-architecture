@@ -1,6 +1,6 @@
 # Hexagonal To-Do List application
 
-This is a demo app that is being built as an example accompanying a series of [blog posts][Blog] on how to implement a
+This is a demo app that was built as an example accompanying a series of [blog posts][Blog] on how to implement a
 hexagonal architecture in a typical Java/Spring application.
 
 ## Features
@@ -36,7 +36,20 @@ via [environment variables][Env]) to adjust the behaviour of the application:
   start
 - `storage.type`: Either `cache` or `database`
     - In `cache` mode, the data is stored in-memory and lost on application shutdown
-    - In `database` mode, the data is persisted to a MongoDB database
+    - In `database` mode, the data is persisted to a MongoDB database (see
+      the [MongoDB section](#using-a-mongodb-database) for details)
+- `spring.data.mongodb.<PROPERTY_NAME>`: Some properties that are used to configure a MongoDB connection. Only used
+  in `database` mode
+
+## Using a MongoDB database
+
+You can follow these [instructions][DbReadme] to easily create a new MongoDB via Docker or use an existing MongoDB of
+your choice.
+In case you use the provided database configuration, just set the property `storage.type=database` and everything should
+work as is.
+If you decide to use another database configuration, you may also need to adjust the
+various `spring.data.mongodb.<PROPERTY_NAME>` properties. See the [configuration section](#configuration) for more
+details on the various configuration properties.
 
 ## Build and ruin
 
@@ -53,6 +66,8 @@ mvn spring-boot:run
 ```
 
 [AppProperties]: src/main/resources/application.properties
+
+[DbReadme]: database/README.md
 
 [//]: # (TODO: Add links to blog posts when they are published)
 
