@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.1.4</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>de.colenet</groupId>
+    <artifactId>hexagonal-todo-list</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>hexagonal.todo.list</name>
+    <description>Demo To-do List project to show how to realize a hexagonal architecture in a Java/Spring project
+    </description>
+    <properties>
+        <!-- Project setting -->
+        <java.version>21</java.version>
+
+        <!-- Plugin setting -->
+        <plugin.setting.prettier.goal>check</plugin.setting.prettier.goal>
+
+        <!-- Plugin versions -->
+        <plugin.prettier>0.21</plugin.prettier>
+        <plugin.prettier.java>2.1.0</plugin.prettier.java>
+
+        <!-- Dependency versions -->
+        <dependency.archunit>1.1.0</dependency.archunit>
+        <dependency.record-builder>37</dependency.record-builder>
+        <dependency.testcontainers>1.19.0</dependency.testcontainers>
+        <dependency.valueprovider>1.2.1</dependency.valueprovider>
+        <dependency.vavr>0.10.4</dependency.vavr>
+    </properties>
+    <dependencies>
+        <!-- Dev tooling -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Spring compile time dependencies -->
+        <!-- Disabled for now, as it encourages Spring to set up a DB connection on startup -->
+        <!--<dependency>-->
+        <!--    <groupId>org.springframework.boot</groupId>-->
+        <!--    <artifactId>spring-boot-starter-data-mongodb</artifactId>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- 3rd party compile time dependencies -->
+        <dependency>
+            <groupId>io.vavr</groupId>
+            <artifactId>vavr</artifactId>
+            <version>${dependency.vavr}</version>
+        </dependency>
+
+        <!-- Spring test dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- 3rd party test dependencies -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${dependency.archunit}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.valueprovider</groupId>
+            <artifactId>value-provider-core</artifactId>
+            <version>${dependency.valueprovider}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.valueprovider</groupId>
+            <artifactId>value-provider-junit5</artifactId>
+            <version>${dependency.valueprovider}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.soabase.record-builder</groupId>
+            <artifactId>record-builder-processor</artifactId>
+            <version>${dependency.record-builder}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${dependency.testcontainers}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <version>${dependency.testcontainers}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${dependency.testcontainers}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.hubspot.maven.plugins</groupId>
+                <artifactId>prettier-maven-plugin</artifactId>
+                <version>${plugin.prettier}</version>
+                <configuration>
+                    <prettierJavaVersion>${plugin.prettier.java}</prettierJavaVersion>
+                    <printWidth>120</printWidth>
+                    <tabWidth>4</tabWidth>
+                    <useTabs>false</useTabs>
+                    <ignoreConfigFile>true</ignoreConfigFile>
+                    <ignoreEditorConfig>true</ignoreEditorConfig>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>${plugin.setting.prettier.goal}</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
