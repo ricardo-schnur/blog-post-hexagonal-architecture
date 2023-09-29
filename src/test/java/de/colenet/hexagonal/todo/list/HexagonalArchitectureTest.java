@@ -18,8 +18,8 @@ class HexagonalArchitectureTest {
         .domainServices(getPackageIdentifier("domain.service"))
         .applicationServices(getPackageIdentifier("application"))
         .adapter("cache", getAdapterIdentifier("cache"))
+        .adapter("console", getAdapterIdentifier("console"))
         .adapter("rest", getAdapterIdentifier("rest"))
-        .withOptionalLayers(true) // TODO Remove this as soon as our layers are filled
         .ensureAllClassesAreContainedInArchitectureIgnoring(BASE_PACKAGE);
 
     private static String getAdapterIdentifier(String name) {

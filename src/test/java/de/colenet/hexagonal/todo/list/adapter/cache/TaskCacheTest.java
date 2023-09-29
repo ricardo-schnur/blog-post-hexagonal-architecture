@@ -1,14 +1,18 @@
 package de.colenet.hexagonal.todo.list.adapter.cache;
 
 import static de.colenet.hexagonal.todo.list.domain.model.task.TaskOpenTaskBuilder.from;
-import static de.colenet.hexagonal.todo.list.domain.model.task.TaskTestdataFactory.createOpenTaskBuilder;
-import static de.colenet.hexagonal.todo.list.domain.model.task.TaskTestdataFactory.createTask;
+import static de.colenet.hexagonal.todo.list.domain.model.task.TaskTestdataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.Sets;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task;
 import de.colenet.hexagonal.todo.list.domain.model.task.TaskTestdataFactory;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
@@ -76,5 +80,30 @@ class TaskCacheTest {
         var result = taskCache.getAll();
 
         assertThat(result).containsExactlyInAnyOrderElementsOf(tasks);
+    }
+
+    @Test
+    void getAllOpenTasksWithDueDateBeforeOrEqual_ReturnsMatchingTasks() {
+        LocalDate date = LocalDate.now();
+        Set<Task> tasksNotToBeFound = Sets.union(
+            Set.of(
+                createOpenTaskBuilder().withDueDate(Optional.of(date.plusDays(1L))),
+                createOpenTaskBuilder().withDueDate(Optional.empty()),
+                createCompletedTaskBuilder().withDueDate(Optional.of(date.plusDays(1L))),
+                createCompletedTaskBuilder().withDueDate(Optional.of(date)),
+                createCompletedTaskBuilder().withDueDate(Optional.of(date.minusDays(1L))),
+                createCompletedTaskBuilder().withDueDate(Optional.empty())
+            ),
+            Stream.generate(TaskTestdataFactory::createCompletedTask).limit(100L).collect(Collectors.toSet())
+        );
+        Set<Task.OpenTask> tasksToBeFound = Set.of(
+            createOpenTaskBuilder().withDueDate(Optional.of(date)),
+            createOpenTaskBuilder().withDueDate(Optional.of(date.minusDays(1L)))
+        );
+        Sets.union(tasksToBeFound, tasksNotToBeFound).forEach(taskCache::save);
+
+        var result = taskCache.getAllOpenTasksWithDueDateBeforeOrEqual(date);
+
+        assertThat(result).containsExactlyInAnyOrderElementsOf(tasksToBeFound);
     }
 }

@@ -128,4 +128,16 @@ class TaskServiceTest {
                 }
             );
     }
+
+    @Test
+    void getAllOpenTasksWithDueDateBeforeOrEqual_CallsRepository_ReturnsResultFromRepository() {
+        LocalDate date = LocalDate.now();
+        List<OpenTask> tasksFromRepository = Stream.generate(TaskTestdataFactory::createOpenTask).limit(3L).toList();
+
+        when(taskRepository.getAllOpenTasksWithDueDateBeforeOrEqual(date)).thenReturn(tasksFromRepository);
+
+        var result = taskService.getAllOpenTasksWithDueDateBeforeOrEqual(date);
+
+        assertThat(result).containsExactlyElementsOf(tasksFromRepository);
+    }
 }
