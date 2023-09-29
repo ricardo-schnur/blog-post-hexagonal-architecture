@@ -19,6 +19,7 @@ class HexagonalArchitectureTest {
         .applicationServices(getPackageIdentifier("application"))
         .adapter("cache", getAdapterIdentifier("cache"))
         .adapter("console", getAdapterIdentifier("console"))
+        .adapter("mongodb", getAdapterIdentifier("mongodb"))
         .adapter("rest", getAdapterIdentifier("rest"))
         .ensureAllClassesAreContainedInArchitectureIgnoring(BASE_PACKAGE);
 
