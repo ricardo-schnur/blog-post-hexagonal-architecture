@@ -32,6 +32,8 @@ There are some properties in the [application.properties][AppProperties] file th
 via [environment variables][Env]) to adjust the behaviour of the application:
 
 - `notification.interval`: The interval (in seconds), in which due notifications are sent
+- `startup.exampletasks.create`: Set to `true` or `false` - controls, whether example tasks are created on application
+  start
 
 ## Build and ruin
 
