@@ -3,6 +3,9 @@ package de.colenet.hexagonal.todo.list.end2end;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.colenet.hexagonal.todo.list.adapter.rest.model.TaskDto;
+import io.vavr.Function2;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +36,13 @@ class HexagonalToDoListApplicationEndToEndTests {
 
     @Test
     void creatingTasksIsPossibleAndCreatedTasksAreReturnedFromGetAll() {
-        List<String> descriptions = List.of("Some description", "Some other description");
-
-        descriptions.forEach(this::createTask);
+        List<Tuple2<String, String>> descriptionsAndDueDates = List.of(
+            Tuple.of("Some description", "2023-07-11"),
+            Tuple.of("Some other description", null),
+            Tuple.of("Task", "2023-07-12"),
+            Tuple.of("Task with same due date", "2023-07-12")
+        );
+        descriptionsAndDueDates.forEach(Function2.of(this::createTask).tupled()::apply);
 
         var result = getAllTasks();
 
@@ -43,15 +50,17 @@ class HexagonalToDoListApplicationEndToEndTests {
         assertThat(result.getBody())
             .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
             .containsExactlyInAnyOrder(
-                new TaskDto(null, "Some description", "open", null),
-                new TaskDto(null, "Some other description", "open", null)
+                new TaskDto(null, "Some description", "2023-07-11", "open", null),
+                new TaskDto(null, "Some other description", null, "open", null),
+                new TaskDto(null, "Task", "2023-07-12", "open", null),
+                new TaskDto(null, "Task with same due date", "2023-07-12", "open", null)
             );
         assertThat(result.getBody()).extracting(TaskDto::id).extracting(UUID::fromString).doesNotContainNull();
     }
 
     @Test
     void completionStateOfTasksCanBeToggledAndTogglingOnlyChangesStateAndCompletionTime() {
-        var createdTask = createTask("Some description").getBody();
+        var createdTask = createTask("Some description", "2023-07-11").getBody();
         assertThat(createdTask.state()).isEqualTo("open");
 
         var id = createdTask.id();
@@ -80,9 +89,14 @@ class HexagonalToDoListApplicationEndToEndTests {
         return restTemplate.exchange("/tasks", HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
     }
 
-    private ResponseEntity<TaskDto> createTask(String description) {
+    private ResponseEntity<TaskDto> createTask(String description, String dueDate) {
         return restTemplate.postForEntity(
-            UriComponentsBuilder.fromPath("/tasks").queryParam("description", description).build().toUri(),
+            UriComponentsBuilder
+                .fromPath("/tasks")
+                .queryParam("description", description)
+                .queryParam("dueDate", dueDate)
+                .build()
+                .toUri(),
             null,
             TaskDto.class
         );

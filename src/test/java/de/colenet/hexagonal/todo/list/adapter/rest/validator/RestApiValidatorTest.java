@@ -2,6 +2,9 @@ package de.colenet.hexagonal.todo.list.adapter.rest.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.vavr.Tuple;
+import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -41,23 +44,63 @@ class RestApiValidatorTest {
         assertThat(result.get()).isEqualTo(UUID.fromString(id));
     }
 
-    @ParameterizedTest
-    @MethodSource("provideBlankStrings")
-    void validateDescription_DescriptionIsBlank_ReturnsMandatoryError(String description) {
-        var result = restApiValidator.validateDescription(description);
+    @Test
+    void validateCreateTaskParameters_BothParametersInvalid_ReturnsTwoErrorMessages() {
+        String description = " ";
+        String dueDate = "2023-07-111";
+
+        var result = restApiValidator.validateCreateTaskParameters(description, dueDate);
 
         assertThat(result.isInvalid()).isTrue();
-        assertThat(result.getError()).isEqualTo("Description is mandatory");
+        assertThat(result.getError())
+            .containsExactlyInAnyOrder(
+                "Description is mandatory",
+                "Due date has to be in format yyyy-MM-dd: " + dueDate
+            );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideBlankStrings")
+    void validateCreateTaskParameters_DescriptionInvalidAndDueDateValid_ReturnsOneError(String description) {
+        String dueDate = "2023-07-11";
+
+        var result = restApiValidator.validateCreateTaskParameters(description, dueDate);
+
+        assertThat(result.isInvalid()).isTrue();
+        assertThat(result.getError()).containsExactlyInAnyOrder("Description is mandatory");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "Not a date in format yyyy-MM-dd", "11.07.2023", "11/07/2023", "2023-7-11" })
+    void validateCreateTaskParameters_DescriptionValidAndDueDateInvalid_ReturnsOneError(String dueDate) {
+        String description = "Some description";
+
+        var result = restApiValidator.validateCreateTaskParameters(description, dueDate);
+
+        assertThat(result.isInvalid()).isTrue();
+        assertThat(result.getError()).containsExactlyInAnyOrder("Due date has to be in format yyyy-MM-dd: " + dueDate);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideBlankStrings")
+    void validateCreateTaskParameters_ValidParametersDueDateBlank_ReturnsResultWithEmptyDate(String dueDate) {
+        String description = "Some description";
+
+        var result = restApiValidator.validateCreateTaskParameters(description, dueDate);
+
+        assertThat(result.isValid()).isTrue();
+        assertThat(result.get()).isEqualTo(Tuple.of(description, Optional.empty()));
     }
 
     @Test
-    void validateDescription_InputIsValid_ReturnsValidatedInput() {
+    void validateCreateTaskParameters_ValidParametersDueDateNotBlank_ReturnsResultWithParsedDate() {
         String description = "Some description";
+        String dueDate = "2023-07-11";
 
-        var result = restApiValidator.validateDescription(description);
+        var result = restApiValidator.validateCreateTaskParameters(description, dueDate);
 
         assertThat(result.isValid()).isTrue();
-        assertThat(result.get()).isEqualTo(description);
+        assertThat(result.get()).isEqualTo(Tuple.of(description, Optional.of(LocalDate.of(2023, 7, 11))));
     }
 
     private static Stream<String> provideBlankStrings() {

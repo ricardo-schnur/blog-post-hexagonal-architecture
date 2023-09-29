@@ -8,10 +8,7 @@ import de.colenet.hexagonal.todo.list.domain.model.task.Task;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task.CompletedTask;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task.OpenTask;
 import de.colenet.hexagonal.todo.list.domain.model.task.TaskTestdataFactory;
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,12 +40,13 @@ class TaskServiceTest {
     @Test
     void createTask_CreatedOpenTaskWithRandomUuid_CallsRepositoryAndReturnsSavedTask() {
         String description = "Some description";
+        Optional<LocalDate> dueDate = Optional.of(LocalDate.now());
         Task createdTaskFromRepository = createTask();
         ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
 
         when(taskRepository.save(captor.capture())).thenReturn(createdTaskFromRepository);
 
-        var result = taskService.createTask(description);
+        var result = taskService.createTask(description, dueDate);
 
         assertThat(result).isEqualTo(createdTaskFromRepository);
         assertThat(captor.getValue())
@@ -57,6 +55,7 @@ class TaskServiceTest {
                 task -> {
                     assertThat(task.id()).isNotNull();
                     assertThat(task.description()).isEqualTo(description);
+                    assertThat(task.dueDate()).isEqualTo(dueDate);
                 }
             );
     }

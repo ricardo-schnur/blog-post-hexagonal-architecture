@@ -2,6 +2,7 @@ package de.colenet.hexagonal.todo.list.adapter.rest.controller;
 
 import static de.colenet.hexagonal.todo.list.adapter.rest.model.TaskDtoTestdataFactory.createTaskDto;
 import static de.colenet.hexagonal.todo.list.domain.model.task.TaskTestdataFactory.createTask;
+import static io.vavr.collection.List.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -10,7 +11,9 @@ import de.colenet.hexagonal.todo.list.adapter.rest.model.TaskDto;
 import de.colenet.hexagonal.todo.list.adapter.rest.validator.RestApiValidator;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task;
 import de.colenet.hexagonal.todo.list.domain.service.task.TaskService;
+import io.vavr.Tuple;
 import io.vavr.control.Validation;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,28 +57,33 @@ class RestApiControllerTest {
     }
 
     @Test
-    void createTask_DescriptionInvalid_ReturnsBadRequestWithErrorMessage() {
+    void createTask_ParametersInvalid_ReturnsBadRequestWithErrorMessage() {
         String description = "   ";
+        String dueDate = "2023-01-111";
 
-        when(restApiValidator.validateDescription(description)).thenReturn(Validation.invalid("Invalid description"));
+        when(restApiValidator.validateCreateTaskParameters(description, dueDate))
+            .thenReturn(Validation.invalid(of("Invalid date", "Invalid description")));
 
-        var result = restApiController.createTask(description);
+        var result = restApiController.createTask(description, dueDate);
 
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(result.getBody()).isEqualTo("Invalid description");
+        assertThat(result.getBody()).isEqualTo("Invalid date; Invalid description");
     }
 
     @Test
     void createTask_ParametersValid_CallsServiceAndReturnsCreatedTask() {
         String description = "Some task";
+        String dueDate = "2023-01-11";
+        LocalDate parsedDate = LocalDate.parse(dueDate);
         Task createdTask = createTask();
         TaskDto mappedTask = createTaskDto();
 
-        when(restApiValidator.validateDescription(description)).thenReturn(Validation.valid(description));
-        when(taskService.createTask(description)).thenReturn(createdTask);
+        when(restApiValidator.validateCreateTaskParameters(description, dueDate))
+            .thenReturn(Validation.valid(Tuple.of(description, Optional.of(parsedDate))));
+        when(taskService.createTask(description, Optional.of(parsedDate))).thenReturn(createdTask);
         when(restApiMapper.toDto(createdTask)).thenReturn(mappedTask);
 
-        var result = restApiController.createTask(description);
+        var result = restApiController.createTask(description, dueDate);
 
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(result.getBody()).isEqualTo(mappedTask);
