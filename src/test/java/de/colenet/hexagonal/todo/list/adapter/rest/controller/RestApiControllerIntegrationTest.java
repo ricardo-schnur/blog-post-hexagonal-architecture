@@ -67,6 +67,26 @@ class RestApiControllerIntegrationTest {
     }
 
     @Test
+    void createTask_InvalidParameters_ReturnsBadRequest() {
+        String description = "  ";
+        String dueDate = "2023-07-111";
+
+        var result = restTemplate.postForEntity(
+            UriComponentsBuilder
+                .fromPath("/tasks")
+                .queryParam("description", description)
+                .queryParam("dueDate", dueDate)
+                .build()
+                .toUri(),
+            null,
+            String.class
+        );
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(result.getBody()).isEqualTo("Description is mandatory");
+    }
+
+    @Test
     void createTask_CreatesTaskViaService_ReturnsCreatedTasks() {
         String description = "Some description";
         OpenTask createdTask = createOpenTaskBuilder().withDescription(description);
@@ -84,6 +104,16 @@ class RestApiControllerIntegrationTest {
     }
 
     @Test
+    void toggleCompletionState_InvalidParameters_ReturnsBadRequest() {
+        String id = "Something that is not a UUID";
+
+        var result = restTemplate.postForEntity("/tasks/toggle-completion/{id}", null, String.class, Map.of("id", id));
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(result.getBody()).isEqualTo("Not a valid UUID: Something that is not a UUID");
+    }
+
+    @Test
     void toggleCompletionState_TaskNotFound_ReturnsBadRequest() {
         String id = "71195625-2414-ad41-4dce-a9dfc6cf4c38";
 
@@ -92,6 +122,7 @@ class RestApiControllerIntegrationTest {
         var result = restTemplate.postForEntity("/tasks/toggle-completion/{id}", null, String.class, Map.of("id", id));
 
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(result.getBody()).isEqualTo("No task found for id: 71195625-2414-ad41-4dce-a9dfc6cf4c38");
     }
 
     @Test

@@ -7,8 +7,10 @@ import static org.mockito.Mockito.when;
 
 import de.colenet.hexagonal.todo.list.adapter.rest.mapper.RestApiMapper;
 import de.colenet.hexagonal.todo.list.adapter.rest.model.TaskDto;
+import de.colenet.hexagonal.todo.list.adapter.rest.validator.RestApiValidator;
 import de.colenet.hexagonal.todo.list.domain.model.task.Task;
 import de.colenet.hexagonal.todo.list.domain.service.task.TaskService;
+import io.vavr.control.Validation;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +26,9 @@ class RestApiControllerTest {
 
     @Mock
     private RestApiMapper restApiMapper;
+
+    @Mock
+    private RestApiValidator restApiValidator;
 
     @Mock
     private TaskService taskService;
@@ -49,11 +54,24 @@ class RestApiControllerTest {
     }
 
     @Test
-    void createTask_CallsService_ReturnsCreatedTask() {
+    void createTask_DescriptionInvalid_ReturnsBadRequestWithErrorMessage() {
+        String description = "   ";
+
+        when(restApiValidator.validateDescription(description)).thenReturn(Validation.invalid("Invalid description"));
+
+        var result = restApiController.createTask(description);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(result.getBody()).isEqualTo("Invalid description");
+    }
+
+    @Test
+    void createTask_ParametersValid_CallsServiceAndReturnsCreatedTask() {
         String description = "Some task";
         Task createdTask = createTask();
         TaskDto mappedTask = createTaskDto();
 
+        when(restApiValidator.validateDescription(description)).thenReturn(Validation.valid(description));
         when(taskService.createTask(description)).thenReturn(createdTask);
         when(restApiMapper.toDto(createdTask)).thenReturn(mappedTask);
 
@@ -64,15 +82,30 @@ class RestApiControllerTest {
     }
 
     @Test
+    void toggleCompletionState_ParametersInvalid_ReturnsBadRequestWithErrorMessage() {
+        String id = "Not a valid id";
+        String errorMessage = "Invalid id";
+
+        when(restApiValidator.validateId(id)).thenReturn(Validation.invalid(errorMessage));
+
+        var result = restApiController.toggleCompletionState(id);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(result.getBody()).isEqualTo(errorMessage);
+    }
+
+    @Test
     void toggleCompletionState_TaskNotFound_ReturnsBadRequestWithNotFoundErrorMessage() {
         UUID id = UUID.randomUUID();
         String idString = id.toString();
 
+        when(restApiValidator.validateId(idString)).thenReturn(Validation.valid(id));
         when(taskService.toggleCompletionState(id)).thenReturn(Optional.empty());
 
         var result = restApiController.toggleCompletionState(idString);
 
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(result.getBody()).isEqualTo("No task found for id: " + idString);
     }
 
     @Test
@@ -82,6 +115,7 @@ class RestApiControllerTest {
         Task createdTask = createTask();
         TaskDto mappedTask = createTaskDto();
 
+        when(restApiValidator.validateId(idString)).thenReturn(Validation.valid(id));
         when(taskService.toggleCompletionState(id)).thenReturn(Optional.of(createdTask));
         when(restApiMapper.toDto(createdTask)).thenReturn(mappedTask);
 
