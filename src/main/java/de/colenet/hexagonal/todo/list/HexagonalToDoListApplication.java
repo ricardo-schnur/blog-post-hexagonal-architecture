@@ -3,8 +3,8 @@ package de.colenet.hexagonal.todo.list;
 import static de.colenet.hexagonal.todo.list.HexagonalToDoListApplication.ADAPTER_PACKAGE;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration;
@@ -14,7 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootConfiguration
+@EnableAutoConfiguration
 @ComponentScan(
     excludeFilters = {
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ADAPTER_PACKAGE + ".cache.*"),
