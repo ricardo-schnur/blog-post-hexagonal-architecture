@@ -11,5 +11,13 @@
   "timezone": "Europe/Berlin",
   "schedule": [
     "before 4am on the first day of the month"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "automerge": true
+    }
   ]
 }
