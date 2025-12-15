@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.0</version>
+        <version>3.5.6</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>de.colenet</groupId>
@@ -28,7 +28,7 @@
         <!-- Dependency versions -->
         <dependency.archunit>1.4.1</dependency.archunit>
         <dependency.record-builder>51</dependency.record-builder>
-        <dependency.testcontainers>2.0.2</dependency.testcontainers>
+        <dependency.testcontainers>1.21.3</dependency.testcontainers>
         <dependency.valueprovider>1.4.3</dependency.valueprovider>
         <dependency.vavr>0.11.0</dependency.vavr>
     </properties>
